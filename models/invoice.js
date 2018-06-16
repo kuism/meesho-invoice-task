@@ -20,7 +20,7 @@ const createInvoice = async (itemId, itemType) => {
     }
 
     const document = await generateInvoiceDocument(data);
-    sendAttachmentForEmail(itemId, itemType, data.url).then((data) => {
+    sendAttachmentForEmail(itemId, itemType, document.url).then((data) => {
         console.log(data)
     }).catch(err => {
         console.log(err)
