@@ -5,13 +5,13 @@ const serviceAccount = require("./meesho-task-queue");
 
 exports.FIREBASE_ADMIN = firebaseAdmin.initializeApp({
     credential: firebaseAdmin.credential.cert(serviceAccount),
-    databaseURL:"https://pole-beacons-73594.firebaseio.com/"
+    databaseURL:"https://meesho-task-queue.firebaseio.com/"
 });
 
 exports.FB_QUEUE_PATH = process.env.FB_QUEUE_PATH || "invoice-service";
 
 exports.MicroServices = {
-    invoiceService: "",
-    emailService: "",
-    orderService: "http://meesho.orderingservice.com/"
+    invoiceService: "http://127.0.0.1:3001/",
+    emailService: "http://127.0.0.1:3002/",
+    orderService: "https://orbiz.herokuapp.com/"
 };

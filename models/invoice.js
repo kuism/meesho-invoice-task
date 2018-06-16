@@ -5,22 +5,21 @@ const MS = require("../configs/config").MicroServices;
 
 const getParsedInvoiceItem = async (itemId, itemType) => {
     let url;
-
-    switch (itemType) {
-        case "Order":
-            url = `${MS.orderService}orders/${itemId}`;
-            let response = await requestPromise(url);
-            response = JSON.parse(response);
-            return response;
-        default:
-
+    if (itemType === "order"){
+        url = `${MS.orderService}orders/${itemId}.json`;
+        let response = await requestPromise(url);
+        response = JSON.parse(response);
+        return response;
     }
-    return ""
 };
 
 const createInvoice = async (itemId, itemType) => {
-    let data = await getParsedInvoiceItem(itemId, itemType);
-    let document = await generateInvoiceDcument(data);
+    const data = await getParsedInvoiceItem(itemId, itemType);
+    if (!data){
+        return Promise.reject(new Error(`${itemType} not found`))
+    }
+
+    const document = await generateInvoiceDocument(data);
 
     let invoice = {
         item_id: itemId,
@@ -33,10 +32,19 @@ const createInvoice = async (itemId, itemType) => {
     return invoice
 };
 
-const generateInvoiceDcument = () => {
-   return {url: "http://meesho.cloudfront.in/invoice.pdf"};
+const generateInvoiceDocument = () => {
+    return new Promise((resolve, reject) => {
+        setTimeout(async () => {
+            resolve({url: "http://meesho.cloudfront.in/invoice.pdf"})
+        }, 2000)
+    });
+};
+
+const getInvoiceOfAnItem = async (itemId, itemType) => {
+    return {invoice: await DB.invoices.findOne({item_id: itemId, item_type: itemType})};
 };
 
 module.exports = {
-    createInvoice: createInvoice
+    createInvoice: createInvoice,
+    getInvoiceOfAnItem: getInvoiceOfAnItem
 };
