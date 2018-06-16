@@ -20,6 +20,11 @@ const createInvoice = async (itemId, itemType) => {
     }
 
     const document = await generateInvoiceDocument(data);
+    sendAttachmentForEmail(itemId, itemType, data.url).then((data) => {
+        console.log(data)
+    }).catch(err => {
+        console.log(err)
+    });
 
     let invoice = {
         item_id: itemId,
@@ -29,7 +34,7 @@ const createInvoice = async (itemId, itemType) => {
 
     invoice = new DB.invoices(invoice);
     invoice = await invoice.save();
-    return invoice
+    return {invoice}
 };
 
 const generateInvoiceDocument = () => {
@@ -42,6 +47,25 @@ const generateInvoiceDocument = () => {
 
 const getInvoiceOfAnItem = async (itemId, itemType) => {
     return {invoice: await DB.invoices.findOne({item_id: itemId, item_type: itemType})};
+};
+
+const sendAttachmentForEmail = async (itemId, itemType, attachment) => {
+    const payload = {
+        item_id: itemId,
+        item_type: itemType,
+        attachment
+    };
+
+    const options = {
+        method: 'POST',
+        uri: `${MS.emailService}email_histories`,
+        body: payload,
+        json: true // Automatically stringifies the body to JSON
+    };
+
+    console.log(options)
+
+    await requestPromise(options)
 };
 
 module.exports = {

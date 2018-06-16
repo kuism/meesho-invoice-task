@@ -15,7 +15,9 @@ const queue = new Queue(refQueue, function (data, progress, resolve, reject) {
 
     switch (data.channel){
         case "create-order":
-            Invoice.createInvoice(data.order_id, "order")
+            Invoice.createInvoice(data.order_id, "order").catch((err) => {
+
+            });
             break;
         default:
 
