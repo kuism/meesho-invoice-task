@@ -3,6 +3,8 @@ const requestPromise = require("request-promise");
 const DB = require("../configs/database");
 const MS = require("../configs/config").MicroServices;
 
+// this function will check for the item type and
+// call the order api MS for getting details of order
 const getParsedInvoiceItem = async (itemId, itemType) => {
     let url;
     if (itemType === "order"){
@@ -13,6 +15,9 @@ const getParsedInvoiceItem = async (itemId, itemType) => {
     }
 };
 
+// its responsible for generating the invoice of an order
+// this will send the email if required and also create a
+// document in invoice collections against the order
 const createInvoice = async (itemId, itemType) => {
     const data = await getParsedInvoiceItem(itemId, itemType);
     if (!data){
@@ -20,7 +25,7 @@ const createInvoice = async (itemId, itemType) => {
     }
 
     const document = await generateInvoiceDocument(data);
-    sendAttachmentForEmail(itemId, itemType, document.url).then((data) => {
+    sendAttachmentForEmailIfRequired(itemId, itemType, document.url).then((data) => {
         console.log(data)
     }).catch(err => {
         console.log(err)
@@ -37,6 +42,8 @@ const createInvoice = async (itemId, itemType) => {
     return {invoice}
 };
 
+// function responsible for creating the invoice
+// it generate the pdf and returns the URl
 const generateInvoiceDocument = () => {
     return new Promise((resolve, reject) => {
         setTimeout(async () => {
@@ -45,27 +52,38 @@ const generateInvoiceDocument = () => {
     });
 };
 
+// get the invoice of the item from the db
 const getInvoiceOfAnItem = async (itemId, itemType) => {
-    return {invoice: await DB.invoices.findOne({item_id: itemId, item_type: itemType})};
+    return {invoice: await DB.invoices.findOne({item_id: itemId, item_type: itemType}).lean()};
 };
 
-const sendAttachmentForEmail = async (itemId, itemType, attachment) => {
-    const payload = {
-        item_id: itemId,
-        item_type: itemType,
-        attachment
-    };
+// this function will call the email-service and check for
+// if there is an entry for this order
+// if there is an entry it indicates that it has send an email without invoice
+// otherwise it will call the api from here
+const sendAttachmentForEmailIfRequired = async (itemId, itemType, attachment) => {
+    const url = `${MS.emailService}email_histories/${itemType}/${itemId}`;
+    const response = await requestPromise(url);
+    if (response.email_history) {
 
-    const options = {
-        method: 'POST',
-        uri: `${MS.emailService}email_histories`,
-        body: payload,
-        json: true // Automatically stringifies the body to JSON
-    };
+        const payload = {
+            item_id: itemId,
+            item_type: itemType,
+            attachment
+        };
 
-    console.log(options)
+        const options = {
+            method: 'POST',
+            uri: `${MS.emailService}email_histories`,
+            body: payload,
+            json: true // Automatically stringifies the body to JSON
+        };
 
-    await requestPromise(options)
+        await requestPromise(options)
+        return {has_send_email: true}
+    }
+
+    return {has_send_email: false}
 };
 
 module.exports = {
